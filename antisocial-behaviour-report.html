@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Antisocial Behaviour Report</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<style>
+  :root {
+    --ink: #1c2b33;
+    --ink-soft: #4a5a63;
+    --paper: #fbfaf7;
+    --line: #d8d3c6;
+    --accent: #8a3324;
+    --accent-soft: #f1e4de;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Georgia', 'Times New Roman', serif;
+    line-height: 1.55;
+  }
+  header {
+    border-bottom: 3px solid var(--ink);
+    padding: 36px 48px 24px;
+  }
+  header .eyebrow {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 8px;
+    font-weight: 700;
+  }
+  header h1 {
+    margin: 0 0 6px;
+    font-size: 30px;
+    font-weight: 400;
+  }
+  header .meta {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 13px;
+    color: var(--ink-soft);
+  }
+  main {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 32px 48px 64px;
+  }
+  #map {
+    width: 100%;
+    height: 460px;
+    border: 1px solid var(--line);
+    margin-bottom: 40px;
+  }
+  .leaflet-popup-content { font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 13px; line-height: 1.5; }
+  .leaflet-popup-content b { color: var(--accent); }
+
+  h2 {
+    font-size: 15px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--ink);
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 10px;
+    margin: 0 0 20px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14.5px;
+  }
+  th {
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    text-align: left;
+    font-size: 11.5px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    padding: 10px 14px;
+    border-bottom: 2px solid var(--ink);
+  }
+  td {
+    padding: 14px 14px;
+    border-bottom: 1px solid var(--line);
+    vertical-align: top;
+  }
+  tr:hover td { background: var(--accent-soft); }
+  .num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .coords {
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    color: var(--ink-soft);
+    white-space: nowrap;
+  }
+  footer {
+    max-width: 980px;
+    margin: 0 auto;
+    padding: 0 48px 48px;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    font-size: 12px;
+    color: var(--ink-soft);
+  }
+  @media print {
+    #map { height: 380px; }
+    header { padding: 0 0 16px; }
+    main { padding: 16px 0 0; }
+    footer { padding: 16px 0 0; }
+  }
+  @media (max-width: 640px) {
+    header, main, footer { padding-left: 20px; padding-right: 20px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">Report submitted for council review</p>
+  <h1>Antisocial Behaviour — Locations of Concern</h1>
+  <p class="meta">Compiled for complaint to the local council · <span id="today"></span></p>
+</header>
+
+<main>
+  <h2>Map of reported locations</h2>
+  <div id="map"></div>
+
+  <h2>Incident log</h2>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:40px;">#</th>
+        <th>Location</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody id="log-body"></tbody>
+  </table>
+</main>
+
+<footer>
+  Coordinates shown are approximate and derived from the reporting party's own observations. This document was prepared to accompany a formal complaint regarding recurring antisocial behaviour in the areas listed above.
+</footer>
+
+<script>
+  const incidents = [
+    {
+      id: 1,
+      lat: 51.5058889, lng: -0.395750,
+      desc: "Large group (10–20) men smoking drugs and drinking, observed at various times of the day, all day."
+    },
+    {
+      id: 2,
+      lat: 51.498056, lng: -0.374444,
+      desc: "A man observed masturbating on 14th June 2026."
+    },
+    {
+      id: 3,
+      lat: 51.500194, lng: -0.368500,
+      desc: "Recurring group of men drinking and smoking drugs at this location."
+    },
+    {
+      id: 4,
+      lat: 51.501806, lng: -0.363583,
+      desc: "Recurring small group of men drinking and smoking here."
+    },
+    {
+      id: 5,
+      lat: 51.502333, lng: -0.362194,
+      desc: "Recurring small group of men drinking and smoking here."
+    },
+    {
+      id: 6,
+      lat: 51.50590128127369, lng: -0.3759754246119341,
+      desc: "On a number of occasions, men have been intoxicated on the foot and cycle bridge."
+    }
+  ];
+
+  document.getElementById('today').textContent = new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const map = L.map('map', { scrollWheelZoom: false });
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; OpenStreetMap contributors',
+    maxZoom: 19
+  }).addTo(map);
+
+  const markerIcon = (num) => L.divIcon({
+    className: '',
+    html: `<div style="background:#8a3324;color:#fff;width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;box-shadow:0 1px 4px rgba(0,0,0,0.4);border:2px solid #fff;">
+             <span style="transform:rotate(45deg);font-family:Helvetica,Arial,sans-serif;font-size:12px;font-weight:700;">${num}</span>
+           </div>`,
+    iconSize: [26, 26],
+    iconAnchor: [13, 26],
+    popupAnchor: [0, -26]
+  });
+
+  const bounds = [];
+  const tbody = document.getElementById('log-body');
+
+  incidents.forEach(item => {
+    const marker = L.marker([item.lat, item.lng], { icon: markerIcon(item.id) }).addTo(map);
+    marker.bindPopup(`<b>Location ${item.id}</b><br>${item.desc}`);
+    bounds.push([item.lat, item.lng]);
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><span class="num">${item.id}</span></td>
+      <td class="coords">${item.lat.toFixed(6)}, ${item.lng.toFixed(6)}</td>
+      <td>${item.desc}</td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  map.fitBounds(bounds, { padding: [40, 40] });
+</script>
+
+</body>
+</html>
